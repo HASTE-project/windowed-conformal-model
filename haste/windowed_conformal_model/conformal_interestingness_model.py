@@ -13,6 +13,14 @@
 ALPHA = 0.8
 WINDOW_SIZE = 8
 
+# This model 'wraps' the other one, handles buisness logic for windowing, fetching of features from MongoDB, etc.
+
+# It also adapts the conformal result from Phils model into a binary interestingness decision to match the rest of the
+# API.
+
+# It is this API which we use from the rest of the system- it allows us to keep the 'core maths' clean from anything
+# messy with MongoDB for example. We put all that "mess" in here.
+
 
 class ConformalInterestingnessModel:
 
