@@ -29,10 +29,22 @@ class ConformalInterestingnessModel:
         pass
 
     def interestingness(self,
-                        metadata):
+                        stream_id=None,
+                        timestamp=None,
+                        location=None,
+                        substream_id=None,
+                        metadata=None,
+                        mongo_collection=None):
         """
-        :param metadata: dictionary containing extracted metadata (eg. image features) for a single image
+        :param stream_id (str): ID for the stream session - used to group all the data for that streaming session.
+        :param timestamp (numeric): should come from the cloud edge (eg. microscope). integer or floating point.
+            *Uniquely identifies the document within the streaming session*.
+        :param location (tuple): spatial information (eg. (x,y)).
+        :param substream_id (string): ID for grouping of documents in stream (eg. microscopy well ID), or 'None'.
+        :param metadata (dict): extracted metadata (eg. image features).
+        :param mongo_collection: collection in mongoDB allowing custom queries (this is a hack - best avoided!)
         """
+
         # TODO: check to see if we at end of window
 
         # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
