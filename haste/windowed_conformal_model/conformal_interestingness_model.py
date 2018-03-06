@@ -10,7 +10,7 @@
 
 
 # TODO: these can go in the ctor - pull the "demo-ness" into the top level repo where we can see it
-ALPHA = 0.8
+EPSILON = 0.2
 WINDOW_SIZE = 8
 
 # This model 'wraps' the other one, handles buisness logic for windowing, fetching of features from MongoDB, etc.
