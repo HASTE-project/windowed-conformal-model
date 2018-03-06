@@ -1,3 +1,6 @@
+
+
+
 # This is the entry point for the containers
 
 # This one is a wrapper for Phils 'core' model, and handles mongodb, windowing, related biz logic for interestingness.
@@ -22,11 +25,17 @@ WINDOW_SIZE = 8
 # messy with MongoDB for example. We put all that "mess" in here.
 
 
+
+
+
 class ConformalInterestingnessModel:
 
     def __init(self):
         # TODO: create mongo client? (or pass is collection passed in?)
         pass
+
+
+
 
     def interestingness(self,
                         stream_id=None,
@@ -62,3 +71,9 @@ class ConformalInterestingnessModel:
         print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
 
         return {'interestingness': 1}
+
+
+if __name__ == '__main__':
+    cim = ConformalInterestingnessModel()
+    interestingness = cim.interestingness('dsffsdfd',1234)
+    print(interestingness)

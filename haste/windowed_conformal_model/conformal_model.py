@@ -1,3 +1,6 @@
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
 # This is the 'core' model - a simple function computing interestingness of a new image, given external features:
 
 # TODO: no state here! just a function!
@@ -15,29 +18,27 @@ def interestingness(all_features, features_for_new_image, all_y):
     :param features_for_new_image: dict of features for new image
     :return: representation of conformal prediction
     """
-    
+
     # TODO: import the 'training' data from another file.
 
     # Phil's transductive conformal prediction (TCP) model.
-    from sklearn.ensemble import RandomForestClassifier
-    import numpy as np
-    
-    X = all_features # ndarray: rows = "training" objects; cols = features
-    xnew = features_for_new_image # feature for new object (ndarray)
-    y = all_y # object labels/classes for "training" objects
- 
-    nlabs = len(np.unique(y)) # number of classes
-    pval = np.zeros(nlabs) # for storing p-values
-    
+
+    X = all_features  # ndarray: rows = "training" objects; cols = features
+    xnew = features_for_new_image  # feature for new object (ndarray)
+    y = all_y  # object labels/classes for "training" objects
+
+    nlabs = len(np.unique(y))  # number of classes
+    pval = np.zeros(nlabs)  # for storing p-values
+
     # Mondrian TCP
     for i in range(0, nlabs):
         model = RandomForestClassifier(n_estimators=100)
-        X_fit = np.append(X, [xnew], axis=0) 
+        X_fit = np.append(X, [xnew], axis=0)
         y_fit = np.append(y, i)
         model.fit(X_fit, y_fit)
-        samp = np.where(y_fit==i)[0]
+        samp = np.where(y_fit == i)[0]
         # non-conformity scores for objects with label i
-        alpha = 1 - model.predict_proba(X_fit[samp, :])[:, i] 
+        alpha = 1 - model.predict_proba(X_fit[samp, :])[:, i]
         # score for "test" object assuming label = i
         alpha_new = alpha[-1]
         # p-value for label i
@@ -46,4 +47,24 @@ def interestingness(all_features, features_for_new_image, all_y):
         pval[i] += np.random.uniform() * len(np.where(alpha == alpha_new)[0])
         pval[i] /= len(alpha)
 
-    return(pval)
+    return pval
+
+
+if __name__ == '__main__':
+
+    # tuples of time-features for each window of images (PH's features not the image feature themselves)
+    # e.g. mean, SD, change of trend, trend diff'd again
+    all_features = [(1.0, 2.0, ), ()]
+
+    # for window of images,
+    features_for_new_image = ()
+
+    # the 'training' set
+    all_y =
+
+
+    interestingness([
+        ((1, ),
+         (,),
+         (,))
+    ],)
