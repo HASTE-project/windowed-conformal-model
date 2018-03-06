@@ -36,9 +36,11 @@ class ConformalInterestingnessModel:
     def queryMongo(mongo_collection, substream_id):
 
     #Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
-    cursor = mongo_collection.find({'substream_id': substream_id, 
-                                    'metadata.imaging_point_number': 1,
-                                    'metadata.color_channel': GREEN_COLOR_CHANNEL}).sort('timestamp', pymongo.ASCENDING)
+    cursor = mongo_collection.find(filter={'substream_id': substream_id, 
+                                           'metadata.imaging_point_number': 1,
+                                           'metadata.color_channel': GREEN_COLOR_CHANNEL},
+                                   sort=[('timestamp', pymongo.ASCENDING)],
+                                   projection=['timestamp', 'metadata.extracted_features'])
 
     correlation = []
     sum_of_intensities = []
