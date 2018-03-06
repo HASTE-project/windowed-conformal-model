@@ -24,7 +24,7 @@ def interestingness(all_features, features_for_new_image, all_y):
 
     # Phil's transductive conformal prediction (TCP) model.
 
-    # TODO: create the ND-array here
+    # TODO: create the ND-array here - see https://docs.scipy.org/doc/numpy/reference/arrays.ndarray.html
     X = all_features  # ndarray: rows = "training" objects; cols = features
     xnew = features_for_new_image  # feature for new object (ndarray)
     y = all_y  # object labels/classes for "training" objects
