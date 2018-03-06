@@ -24,7 +24,7 @@ WINDOW_SIZE = 8
 
 # Some of the wells are processed offline for training, these wells we process online:
 WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
-
+GREEN_COLOR_CHANNEL = 2
 
 class ConformalInterestingnessModel:
 
@@ -54,12 +54,21 @@ class ConformalInterestingnessModel:
             print('interestingness=0 for training well %s' % metadata['well'], flush=True)
             return {'interestingness': 0}
 
+        if metadata['color_channel'] != GREEN_COLOR_CHANNEL:
+            print('interestingness=0 for non-green image: %s' % metadata['original_filename'], flush=True)
+            return {'interestingness': 0}
+
+        if metadata['imaging_point_number'] != 1:
+            print('interestingness=0 for image from second field: %s' % metadata['original_filename'], flush=True)
+            return {'interestingness': 0}
+
         # TODO: check to see if we at end of window
 
         # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
         # TODO: Return it.
 
         # TODO: if so, query mongoDB for all historic features for this substream
+        # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
 
         # TODO: query the core model (pass in whatever it needs, also window size)
 
@@ -71,3 +80,8 @@ class ConformalInterestingnessModel:
         print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
 
         return {'interestingness': 1}
+
+
+if __name__ == '__main__':
+    # TODO: add self-contained example
+    pass
