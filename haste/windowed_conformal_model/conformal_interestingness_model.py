@@ -10,7 +10,7 @@
 
 
 # TODO: these can go in the ctor - pull the "demo-ness" into the top level repo where we can see it
-ALPHA = 0.8
+EPSILON = 0.2
 WINDOW_SIZE = 8
 
 # This model 'wraps' the other one, handles buisness logic for windowing, fetching of features from MongoDB, etc.
@@ -21,6 +21,10 @@ WINDOW_SIZE = 8
 # It is this API which we use from the rest of the system- it allows us to keep the 'core maths' clean from anything
 # messy with MongoDB for example. We put all that "mess" in here.
 
+
+# Some of the wells are processed offline for training, these wells we process online:
+WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
+GREEN_COLOR_CHANNEL = 2
 
 class ConformalInterestingnessModel:
 
@@ -45,20 +49,47 @@ class ConformalInterestingnessModel:
         :param mongo_collection: collection in mongoDB allowing custom queries (this is a hack - best avoided!)
         """
 
+        # For the demo - skip wells which we trained on.
+        if substream_id not in WELLS_FOR_ONLINE_ANALYSIS:
+            print('interestingness=0 for training well %s' % metadata['well'], flush=True)
+            return {'interestingness': 0}
+
+        if metadata['color_channel'] != GREEN_COLOR_CHANNEL:
+            print('interestingness=0 for non-green image: %s' % metadata['original_filename'], flush=True)
+            return {'interestingness': 0}
+
+        if metadata['imaging_point_number'] != 1:
+            print('interestingness=0 for image from second field: %s' % metadata['original_filename'], flush=True)
+            return {'interestingness': 0}
+
         # TODO: check to see if we at end of window
 
-        # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
-        # TODO: Return it.
+        if timestamp % WINDOW_SIZE == 0:
+            # At the end of the window.
 
-        # TODO: if so, query mongoDB for all historic features for this substream
+            # TODO: if so, query mongoDB for all historic features for this substream
+            # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
 
-        # TODO: query the core model (pass in whatever it needs, also window size)
+            # TODO: query the core model (pass in whatever it needs, also window size)
 
-        # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
+            # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
+            # based on epsilon
 
-        # TODO: return that value
+            # TODO: return that value
+            pass
+        else:
+            # Not at the end of the window.
+            # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
+            # or, if nothing processed yet, just default to 1.
+            pass
+
 
         # Log like this
-        print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
+        #print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
 
         return {'interestingness': 1}
+
+
+if __name__ == '__main__':
+    # TODO: add self-contained example
+    pass
