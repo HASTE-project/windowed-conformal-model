@@ -22,6 +22,10 @@ WINDOW_SIZE = 8
 # messy with MongoDB for example. We put all that "mess" in here.
 
 
+# Some of the wells are processed offline for training, these wells we process online:
+WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
+
+
 class ConformalInterestingnessModel:
 
     def __init(self):
@@ -44,6 +48,11 @@ class ConformalInterestingnessModel:
         :param metadata (dict): extracted metadata (eg. image features).
         :param mongo_collection: collection in mongoDB allowing custom queries (this is a hack - best avoided!)
         """
+
+        # For the demo - skip wells which we trained on.
+        if substream_id not in WELLS_FOR_ONLINE_ANALYSIS:
+            print('interestingness=0 for training well %s' % metadata['well'], flush=True)
+            return {'interestingness': 0}
 
         # TODO: check to see if we at end of window
 

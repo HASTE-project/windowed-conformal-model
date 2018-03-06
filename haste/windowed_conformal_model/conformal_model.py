@@ -54,3 +54,4 @@ def interestingness(all_features, features_for_new_image, all_y):
 
 if __name__ == '__main__':
     # TODO: add example here
+    pass
