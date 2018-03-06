@@ -1,3 +1,4 @@
+import pymongo
 # This is the entry point for the containers
 
 # This one is a wrapper for Phils 'core' model, and handles mongodb, windowing, related biz logic for interestingness.
@@ -35,8 +36,9 @@ class ConformalInterestingnessModel:
     def queryMongo(mongo_collection, substream_id):
 
     #Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
-    cursor = mongo_collection.find({'substream_id': substream_id, 'metadata.imaging_point_number': 1,
-                                    'metadata.color_channel': 2}).sort('timestamp', 1)
+    cursor = mongo_collection.find({'substream_id': substream_id, 
+                                    'metadata.imaging_point_number': 1,
+                                    'metadata.color_channel': GREEN_COLOR_CHANNEL}).sort('timestamp', pymongo.ASCENDING)
 
     correlation = []
     sum_of_intensities = []
