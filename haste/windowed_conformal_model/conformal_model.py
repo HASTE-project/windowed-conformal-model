@@ -1,3 +1,6 @@
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
 # This is the 'core' model - a simple function computing interestingness of a new image, given external features:
 
 # TODO: no state here! just a function!
@@ -11,33 +14,33 @@
 
 def interestingness(all_features, features_for_new_image, all_y):
     """
-    :param all_features: array of dicts of features for all images seen so far (this comes from MongoDB) 
-    :param features_for_new_image: dict of features for new image
+    :param all_features: tuples of time-features for each *window* of images (not the image features themselves)
+    :param features_for_new_image: dict of image time-features for new image window (not the image features themselves)
+    :param all_y: 'training' data
     :return: representation of conformal prediction
     """
-    
+
     # TODO: import the 'training' data from another file.
 
     # Phil's transductive conformal prediction (TCP) model.
-    from sklearn.ensemble import RandomForestClassifier
-    import numpy as np
-    
-    X = all_features # ndarray: rows = "training" objects; cols = features
-    xnew = features_for_new_image # feature for new object (ndarray)
-    y = all_y # object labels/classes for "training" objects
- 
-    nlabs = len(np.unique(y)) # number of classes
-    pval = np.zeros(nlabs) # for storing p-values
-    
+
+    # TODO: create the ND-array here
+    X = all_features  # ndarray: rows = "training" objects; cols = features
+    xnew = features_for_new_image  # feature for new object (ndarray)
+    y = all_y  # object labels/classes for "training" objects
+
+    nlabs = len(np.unique(y))  # number of classes
+    pval = np.zeros(nlabs)  # for storing p-values
+
     # Mondrian TCP
     for i in range(0, nlabs):
         model = RandomForestClassifier(n_estimators=100)
-        X_fit = np.append(X, [xnew], axis=0) 
+        X_fit = np.append(X, [xnew], axis=0)
         y_fit = np.append(y, i)
         model.fit(X_fit, y_fit)
-        samp = np.where(y_fit==i)[0]
+        samp = np.where(y_fit == i)[0]
         # non-conformity scores for objects with label i
-        alpha = 1 - model.predict_proba(X_fit[samp, :])[:, i] 
+        alpha = 1 - model.predict_proba(X_fit[samp, :])[:, i]
         # score for "test" object assuming label = i
         alpha_new = alpha[-1]
         # p-value for label i
@@ -46,4 +49,8 @@ def interestingness(all_features, features_for_new_image, all_y):
         pval[i] += np.random.uniform() * len(np.where(alpha == alpha_new)[0])
         pval[i] /= len(alpha)
 
-    return(pval)
+    return pval
+
+
+if __name__ == '__main__':
+    # TODO: add example here
