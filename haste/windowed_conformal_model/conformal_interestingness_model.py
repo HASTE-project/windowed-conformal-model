@@ -1,3 +1,5 @@
+import pymongo
+
 # This is the entry point for the containers
 
 # This one is a wrapper for Phils 'core' model, and handles mongodb, windowing, related biz logic for interestingness.
@@ -25,6 +27,7 @@ WINDOW_SIZE = 8
 # Some of the wells are processed offline for training, these wells we process online:
 WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
 GREEN_COLOR_CHANNEL = 2
+
 
 class ConformalInterestingnessModel:
 
@@ -55,10 +58,12 @@ class ConformalInterestingnessModel:
             return {'interestingness': 0}
 
         if metadata['color_channel'] != GREEN_COLOR_CHANNEL:
+            # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
             print('interestingness=0 for non-green image: %s' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
         if metadata['imaging_point_number'] != 1:
+            # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
             print('interestingness=0 for image from second field: %s' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
@@ -76,20 +81,58 @@ class ConformalInterestingnessModel:
             # based on epsilon
 
             # TODO: return that value
-            pass
+            return {'interestingness': 1}
+
         else:
             # Not at the end of the window.
             # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
-            # or, if nothing processed yet, just default to 1.
-            pass
+            lastest_image_for_substream = list(mongo_collection.find(filter={'substream_id': substream_id,
+                                                                             'metadata.imaging_point_number': 1,
+                                                                             'metadata.color_channel': GREEN_COLOR_CHANNEL},
+                                                                     sort=[('timestamp', pymongo.DESCENDING)],
+                                                                     projection=['interestingness'],
+                                                                     limit=1))
 
-
-        # Log like this
-        #print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
-
-        return {'interestingness': 1}
+            if len(lastest_image_for_substream) == 0:
+                print('returning interestingness=1: not at end of window, and nothing processed yet', flush=True)
+                return {'interestingness': 1}
+            else:
+                interestingness = lastest_image_for_substream[0]['interestingness']
+                print('returning interestingness=%d: not at end of window, falling back to latest result'
+                      % interestingness, flush=True)
+                return {'interestingness': interestingness}
 
 
 if __name__ == '__main__':
-    # TODO: add self-contained example
-    pass
+    STREAM_ID = 'strm_2018_03_05__14_35_26_from_al'
+    mongo_client = pymongo.MongoClient('mongodb://metadata-db-prod')
+    mongo_db = mongo_client.streams
+    cim = ConformalInterestingnessModel()
+
+    # Modify this to test the above
+    # TODO: refactor into some proper test-cases
+    result = cim.interestingness(stream_id=STREAM_ID,
+                                 timestamp=88,
+                                 location=None,
+                                 substream_id='G11',
+                                 metadata={
+                                     "full_path": "/foo/bar/wibble/AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01",
+                                     "imaging_point_number": 1,
+                                     "time_point_number": 88,
+                                     "unix_timestamp": 1520267258.6972,
+                                     "assay_plate_name": "AssayPlate_NUNC_#165305-1",
+                                     "original_filename": "AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01.tif",
+                                     "color_channel": 2,
+                                     "image_length_bytes": 2554170,
+                                     "well": "G11",
+                                     "z_index_3d": 1,
+                                     "time_line_number": 1,
+                                     "action_list_number": 2,
+                                     "extracted_features": {
+                                         "sum_of_intensities": 10000531,
+                                         "correlation": 0.065282808685255,
+                                         "laplaceVariance": 1.8528573200424e-7
+                                     }},
+                                 mongo_collection=mongo_db[STREAM_ID])
+
+    print(result)
