@@ -64,20 +64,28 @@ class ConformalInterestingnessModel:
 
         # TODO: check to see if we at end of window
 
-        # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
-        # TODO: Return it.
+        if timestamp % WINDOW_SIZE == 0:
+            # At the end of the window.
 
-        # TODO: if so, query mongoDB for all historic features for this substream
-        # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
+            # TODO: if so, query mongoDB for all historic features for this substream
+            # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
 
-        # TODO: query the core model (pass in whatever it needs, also window size)
+            # TODO: query the core model (pass in whatever it needs, also window size)
 
-        # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
+            # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
+            # based on epsilon
 
-        # TODO: return that value
+            # TODO: return that value
+            pass
+        else:
+            # Not at the end of the window.
+            # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
+            # or, if nothing processed yet, just default to 1.
+            pass
+
 
         # Log like this
-        print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
+        #print('windowed_conformal_model: log something here', flush=True)  # Flush for Docker.
 
         return {'interestingness': 1}
 
