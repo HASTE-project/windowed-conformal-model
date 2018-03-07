@@ -35,6 +35,31 @@ class ConformalInterestingnessModel:
         # TODO: create mongo client? (or pass is collection passed in?)
         pass
 
+    def queryMongo(mongo_collection, substream_id):
+
+    #Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
+    cursor = mongo_collection.find(filter={'substream_id': substream_id, 
+                                           'metadata.imaging_point_number': 1,
+                                           'metadata.color_channel': GREEN_COLOR_CHANNEL},
+                                   sort=[('timestamp', pymongo.ASCENDING)],
+                                   projection=['timestamp', 'metadata.extracted_features'])
+
+    correlation = []
+    sum_of_intensities = []
+    x_time = []
+
+    for document in cursor:
+        correlation.append(
+            document['metadata']['extracted_features']['correlation'])
+
+        sum_of_intensities.append(
+            document['metadata']['extracted_features']['sum_of_intensities'])
+        
+        x_time.append(document['timestamp'])
+
+    return correlation, sum_of_intensities, x_time
+
+
     def interestingness(self,
                         stream_id=None,
                         timestamp=None,
