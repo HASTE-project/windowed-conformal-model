@@ -90,7 +90,8 @@ class ConformalInterestingnessModel:
                                                                              'metadata.imaging_point_number': 1,
                                                                              'metadata.color_channel': GREEN_COLOR_CHANNEL},
                                                                      sort=[('timestamp', pymongo.DESCENDING)],
-                                                                     projection=['interestingness'],
+                                                                     projection=['interestingness',
+                                                                                 'timestamp'],
                                                                      limit=1))
 
             if len(lastest_image_for_substream) == 0:
@@ -98,8 +99,14 @@ class ConformalInterestingnessModel:
                 return {'interestingness': 1}
             else:
                 interestingness = lastest_image_for_substream[0]['interestingness']
-                print('returning interestingness=%d: not at end of window, falling back to latest result'
+                print('returning interestingness={}: not at end of window, falling back to latest result'
                       % interestingness, flush=True)
+
+                latest_image_timestamp = lastest_image_for_substream[0]['timestamp']
+                if latest_image_timestamp + 1 != timestamp:
+                    print('missing image - current timestamp: {} previous image has timestamp {} !'
+                          % (timestamp, latest_image_timestamp), flush=True)
+
                 return {'interestingness': interestingness}
 
 
