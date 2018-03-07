@@ -11,7 +11,7 @@ import pymongo
 # TODO: no state here! except a mongo client!
 
 
-# TODO: these can go in the ctor - pull the "demo-ness" into the top level repo where we can see it
+# TODO: these can go in the ctor? - pull the "demo-ness" into the top level repo where we can see it
 EPSILON = 0.2
 WINDOW_SIZE = 8
 
@@ -54,17 +54,17 @@ class ConformalInterestingnessModel:
 
         # For the demo - skip wells which we trained on.
         if substream_id not in WELLS_FOR_ONLINE_ANALYSIS:
-            print('interestingness=0 for training well %s' % metadata['well'], flush=True)
+            print('interestingness=0 for training well {}' % metadata['well'], flush=True)
             return {'interestingness': 0}
 
         if metadata['color_channel'] != GREEN_COLOR_CHANNEL:
             # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
-            print('interestingness=0 for non-green image: %s' % metadata['original_filename'], flush=True)
+            print('interestingness=0 for non-green image: {}' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
         if metadata['imaging_point_number'] != 1:
             # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
-            print('interestingness=0 for image from second field: %s' % metadata['original_filename'], flush=True)
+            print('interestingness=0 for image from second field: {}' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
         # TODO: check to see if we at end of window
