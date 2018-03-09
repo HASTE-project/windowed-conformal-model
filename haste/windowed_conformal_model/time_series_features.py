@@ -15,24 +15,30 @@ import pandas as pd
 from pygam import LinearGAM
 
 
-def time_series_features(time_feature, time_steps, end_time):
+def time_series_features(feature_time_series, timestamps, end_time):
     """
-    :param time_feature: 1d ndarray of features (e.g. GFP sum at each of time_steps).
-    :param time_steps: 1d ndarray e.g. 0:7, 0:15, but can deal with missing data.
+    Computes summary features (mean,SD,etc.) for a time-window of a particular document (image) feature.
+
+    :param feature_time_series: 1d ndarray feature timeseries (e.g. GFP sum at each of time_steps).
+    :param timestamps: 1d ndarray e.g. 0:7, 0:15, but can deal with missing data.
     :param end_time: either 8, 16, 24, ..., 88.
     :return: 4 time-series features (mean; standard deviation; mean(trend); mean(trend change))
     """
+
+    if len(feature_time_series) != len(timestamps):
+        raise Exception('feature_time_series and timestamps must have equal length')
+
     feat = np.zeros(4)
 
-    X = pd.DataFrame(time_steps)
-    y = pd.Series(time_feature)
+    X = pd.DataFrame(timestamps)
+    Y = pd.Series(feature_time_series)
 
-    gam = LinearGAM(n_splines=min(25, len(y))).gridsearch(X, y)
+    gam = LinearGAM(n_splines=min(25, len(Y))).gridsearch(X, Y)
 
-    feat[0] = np.mean(y)  # mean of raw data
-    feat[1] = np.std(y)  # standard deviation of raw data
+    feat[0] = np.mean(Y)  # mean of raw data
+    feat[1] = np.std(Y)  # standard deviation of raw data
 
-    endt = end_time
+    endt = end_time  # TODO: unneeded?
     y_pred = gam.predict(pd.DataFrame(np.arange(endt)))
 
     D1 = np.zeros(endt)
@@ -52,10 +58,10 @@ if __name__ == '__main__':
     # strangely when running this "poor man's unit test" from the terminal I get an ImportWarning
     # but not when I run it in a jupyter notebook!?
     # in both cases things appear to work though...
-    tife = np.sort(np.random.random(8))
-    tist = np.arange(8)
-    enti = 8
-    tsfe = time_series_features(time_feature=tife, time_steps=tist, end_time=enti)
+    features = np.sort(np.random.random(8))
+    timestamps = np.arange(8)
+    end_time = 8
+    ts_features = time_series_features(feature_time_series=features, timestamps=timestamps, end_time=end_time)
     # if just using GFP will run the above function twice appending the results as we go
     # so run for GFP sum and get 4 features
     # then run with GFP correlation and append four more features to the 1d ndarray
@@ -63,7 +69,7 @@ if __name__ == '__main__':
     # for each granulometry disc size we decide to use
     # in my R demo I used disk sizes 2:4
     # so for the "full" model I had 32 features to fit the models to
-    print(tsfe)
+    print(ts_features)
 
 # Phil's TODO list (with help as needed from Ben & Håkan)
 # ------------------------------------------------------
