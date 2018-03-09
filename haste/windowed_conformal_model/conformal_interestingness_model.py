@@ -1,4 +1,5 @@
 import pymongo
+from .time_series_features import time_series_features
 
 # This is the entry point for the containers
 
@@ -96,7 +97,13 @@ class ConformalInterestingnessModel:
             # At the end of the window.
 
             # TODO: if so, query mongoDB for all historic features for this substream
-            # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
+            #course_features = self.all_course_features_for_substream(..)
+
+            # Compute features on the entire timeseries for that well.
+            # TODO: which image features do we want to use?
+            #time_series_features = time_series_features()
+
+
 
             # TODO: query the core model (pass in whatever it needs, also window size)
 

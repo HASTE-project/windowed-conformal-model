@@ -14,9 +14,6 @@ import numpy as np
 import pandas as pd
 from pygam import LinearGAM
 
-# TODO: BB is confused about the windowing - do we call this the function the whole web-substream time-series,
-# or just the most recent timewindow? If the latter, don’t we need a `start_time` also?
-
 def time_series_features(feature_time_series, timestamps, end_time):
     """
     Computes summary features (mean,SD,etc.) for a time-window of a particular document (image) feature.
