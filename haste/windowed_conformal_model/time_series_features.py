@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 from pygam import LinearGAM
 
-def tsfeatures(time_feature, time_steps, end_time):
+
+def time_series_features(time_feature, time_steps, end_time):
     """
     :param time_feature: 1d ndarray of features (e.g. GFP sum at each of time_steps).
     :param time_steps: 1d ndarray e.g. 0:7, 0:15, but can deal with missing data.
@@ -22,29 +23,30 @@ def tsfeatures(time_feature, time_steps, end_time):
     :return: 4 time-series features (mean; standard deviation; mean(trend); mean(trend change))
     """
     feat = np.zeros(4)
-    
+
     X = pd.DataFrame(time_steps)
     y = pd.Series(time_feature)
-    
-    gam = LinearGAM(n_splines=min(25,len(y))).gridsearch(X, y)
-    
-    feat[0] = np.mean(y) # mean of raw data
+
+    gam = LinearGAM(n_splines=min(25, len(y))).gridsearch(X, y)
+
+    feat[0] = np.mean(y)  # mean of raw data
     feat[1] = np.std(y)  # standard deviation of raw data
-    
+
     endt = end_time
     y_pred = gam.predict(pd.DataFrame(np.arange(endt)))
-    
+
     D1 = np.zeros(endt)
     D2 = np.zeros(endt)
-    
-    for i in range(1, endt-1):
-        D1[i] = 0.5*(y_pred[i+1] - y_pred[i-1])  # 1st derivative from smooth
-        D2[i] = y_pred[i+1] - 2*y_pred[i] + y_pred[i-1]  # 2nd derivative 
-    
-    feat[2] = np.mean(D1[1:(endt-1)])
-    feat[3] = np.mean(D2[1:(endt-1)])
-    
+
+    for i in range(1, endt - 1):
+        D1[i] = 0.5 * (y_pred[i + 1] - y_pred[i - 1])  # 1st derivative from smooth
+        D2[i] = y_pred[i + 1] - 2 * y_pred[i] + y_pred[i - 1]  # 2nd derivative
+
+    feat[2] = np.mean(D1[1:(endt - 1)])
+    feat[3] = np.mean(D2[1:(endt - 1)])
+
     return feat
+
 
 if __name__ == '__main__':
     # strangely when running this "poor man's unit test" from the terminal I get an ImportWarning
@@ -53,7 +55,7 @@ if __name__ == '__main__':
     tife = np.sort(np.random.random(8))
     tist = np.arange(8)
     enti = 8
-    tsfe = tsfeatures(time_feature=tife, time_steps=tist, end_time=enti)
+    tsfe = time_series_features(time_feature=tife, time_steps=tist, end_time=enti)
     # if just using GFP will run the above function twice appending the results as we go
     # so run for GFP sum and get 4 features
     # then run with GFP correlation and append four more features to the 1d ndarray
@@ -62,7 +64,6 @@ if __name__ == '__main__':
     # in my R demo I used disk sizes 2:4
     # so for the "full" model I had 32 features to fit the models to
     print(tsfe)
-
 
 # Phil's TODO list (with help as needed from Ben & Håkan)
 # ------------------------------------------------------
@@ -84,4 +85,3 @@ if __name__ == '__main__':
 # are results comparable to those gotten with R?
 # plot results also with python (as from end of R demo)
 # tables of results from python run (again as from end of my R demo)
-
