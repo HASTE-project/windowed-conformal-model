@@ -1,4 +1,5 @@
 import pymongo
+from .time_series_features import time_series_features
 
 # This is the entry point for the containers
 
@@ -35,30 +36,28 @@ class ConformalInterestingnessModel:
         # TODO: create mongo client? (or pass is collection passed in?)
         pass
 
-    def queryMongo(mongo_collection, substream_id):
+    def all_course_features_for_substream(self, mongo_collection, substream_id):
+        # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
+        cursor = mongo_collection.find(filter={'substream_id': substream_id,
+                                               'metadata.imaging_point_number': 1,
+                                               'metadata.color_channel': GREEN_COLOR_CHANNEL},
+                                       sort=[('timestamp', pymongo.ASCENDING)],
+                                       projection=['timestamp', 'metadata.extracted_features'])
 
-    #Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
-    cursor = mongo_collection.find(filter={'substream_id': substream_id, 
-                                           'metadata.imaging_point_number': 1,
-                                           'metadata.color_channel': GREEN_COLOR_CHANNEL},
-                                   sort=[('timestamp', pymongo.ASCENDING)],
-                                   projection=['timestamp', 'metadata.extracted_features'])
+        correlations = []
+        sums_of_intensities = []
+        x_times = []
 
-    correlation = []
-    sum_of_intensities = []
-    x_time = []
+        for document in cursor:
+            correlations.append(
+                document['metadata']['extracted_features']['correlation'])
 
-    for document in cursor:
-        correlation.append(
-            document['metadata']['extracted_features']['correlation'])
+            sums_of_intensities.append(
+                document['metadata']['extracted_features']['sum_of_intensities'])
 
-        sum_of_intensities.append(
-            document['metadata']['extracted_features']['sum_of_intensities'])
-        
-        x_time.append(document['timestamp'])
+            x_times.append(document['timestamp'])
 
-    return correlation, sum_of_intensities, x_time
-
+        return correlations, sums_of_intensities, x_times
 
     def interestingness(self,
                         stream_id=None,
@@ -98,7 +97,13 @@ class ConformalInterestingnessModel:
             # At the end of the window.
 
             # TODO: if so, query mongoDB for all historic features for this substream
-            # mongo_collection.find({ 'substream_id': substream_id, 'order_by': 'timestamp'}).fetch()
+            #course_features = self.all_course_features_for_substream(..)
+
+            # Compute features on the entire timeseries for that well.
+            # TODO: which image features do we want to use?
+            #time_series_features = time_series_features()
+
+
 
             # TODO: query the core model (pass in whatever it needs, also window size)
 
