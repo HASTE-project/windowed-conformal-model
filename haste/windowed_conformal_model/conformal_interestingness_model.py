@@ -123,10 +123,13 @@ class ConformalInterestingnessModel:
 
             # TODO: query the core model (pass in whatever it needs, also window size)
             # BB: again, confused about the windowing?!
-            pval = 0.1  # interestingness(all_features, features_for_new_image, all_y):
-            print('pval for timestamp {} = {}' % (timestamp, pval))
+            p_values = interestingness(all_features, features_for_new_image, all_y):
+            print('pval for timestamp {} = {}' % (timestamp, p_values))
 
-            if pval < EPSILON:
+            p_interesting = p_values[0]
+            p_not_interesting = p_values[1]
+
+            if p_not_interesting < EPSILON:
                 return {'interestingness': 0}
             else:
                 return {'interestingness': 1}

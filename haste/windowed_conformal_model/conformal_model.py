@@ -17,7 +17,7 @@ def interestingness(all_features, features_for_new_image, all_y):
     :param all_features: tuples of time-features for each *window* of images (not the image features themselves)
     :param features_for_new_image: dict of image time-features for new image window (not the image features themselves)
     :param all_y: 'training' data
-    :return: representation of conformal prediction
+    :return: a list of p-values for each class [not interesting, interesting]
     """
 
     # TODO: import the 'training' data from another file.
@@ -30,7 +30,7 @@ def interestingness(all_features, features_for_new_image, all_y):
     y = all_y  # object labels/classes for "training" objects
 
     nlabs = len(np.unique(y))  # number of classes
-    pval = np.zeros(nlabs)  # for storing p-values
+    p_values = np.zeros(nlabs)  # for storing p-values
 
     # Mondrian TCP
     for i in range(0, nlabs):
@@ -44,12 +44,12 @@ def interestingness(all_features, features_for_new_image, all_y):
         # score for "test" object assuming label = i
         alpha_new = alpha[-1]
         # p-value for label i
-        pval[i] = len(np.where(alpha > alpha_new)[0])
+        p_values[i] = len(np.where(alpha > alpha_new)[0])
         # more careful treatment of cases where alpha == alpha_new
-        pval[i] += np.random.uniform() * len(np.where(alpha == alpha_new)[0])
-        pval[i] /= len(alpha)
+        p_values[i] += np.random.uniform() * len(np.where(alpha == alpha_new)[0])
+        p_values[i] /= len(alpha)
 
-    return pval
+    return p_values
 
 
 if __name__ == '__main__':
