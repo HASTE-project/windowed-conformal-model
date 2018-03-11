@@ -1,7 +1,8 @@
 import pymongo
 import numpy
 from .time_series_features import time_series_features
-from .conformal_model import interestingness
+from .conformal_model_offline_data import ALL_FEATURES, ALL_Y
+from .conformal_model import interestingness as conformal_interestingness
 
 # This is the entry point for the containers
 
@@ -121,10 +122,8 @@ class ConformalInterestingnessModel:
                                                                   timestamp)
             # = (mean,sd,d1,d2)
 
-            # TODO: query the core model (pass in whatever it needs, also window size)
-            # BB: again, confused about the windowing?!
-            p_values = interestingness(all_features, features_for_new_image, all_y):
-            print('pval for timestamp {} = {}' % (timestamp, p_values))
+            p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
+            print('p_values for timestamp {} = {}' % (timestamp, p_values))
 
             p_interesting = p_values[0]
             p_not_interesting = p_values[1]
@@ -132,6 +131,7 @@ class ConformalInterestingnessModel:
             if p_not_interesting < EPSILON:
                 return {'interestingness': 0}
             else:
+                # If we're not sure, always save.
                 return {'interestingness': 1}
 
         else:
