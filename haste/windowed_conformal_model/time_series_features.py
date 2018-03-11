@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 from pygam import LinearGAM
 
+
+# TODO: reorder params, timestamps first
 def time_series_features(feature_time_series, timestamps, end_time):
     """
     Computes summary features (mean,SD,etc.) for a time-window of a particular document (image) feature.

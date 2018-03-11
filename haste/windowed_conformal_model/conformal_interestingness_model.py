@@ -1,5 +1,7 @@
 import pymongo
+import numpy
 from .time_series_features import time_series_features
+from .conformal_model import interestingness
 
 # This is the entry point for the containers
 
@@ -36,7 +38,8 @@ class ConformalInterestingnessModel:
         # TODO: create mongo client? (or pass is collection passed in?)
         pass
 
-    def all_course_features_for_substream(self, mongo_collection, substream_id):
+    @staticmethod
+    def all_course_features_for_substream(mongo_collection, substream_id):
         # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
         cursor = mongo_collection.find(filter={'substream_id': substream_id,
                                                'metadata.imaging_point_number': 1,
@@ -44,6 +47,7 @@ class ConformalInterestingnessModel:
                                        sort=[('timestamp', pymongo.ASCENDING)],
                                        projection=['timestamp', 'metadata.extracted_features'])
 
+        # TODO: consider using list comprehensions here?
         correlations = []
         sums_of_intensities = []
         x_times = []
@@ -91,27 +95,41 @@ class ConformalInterestingnessModel:
             print('interestingness=0 for image from second field: {}' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
-        # TODO: check to see if we at end of window
-
         if timestamp % WINDOW_SIZE == 0:
             # At the end of the window.
 
-            # TODO: if so, query mongoDB for all historic features for this substream
-            #course_features = self.all_course_features_for_substream(..)
+            course_features = self.all_course_features_for_substream(mongo_collection=mongo_collection,
+                                                                     substream_id=substream_id)
+            # ([correlation], [sum_of_intensities], [x_time])
+
+            # BB: ** I'm confused here - how do we do the windowing here? **
+
+            timestamps = course_features[2]
+            timestamps_ndarray = numpy.ndarray(shape=(len(timestamps)),
+                                               dtype=int,
+                                               buffer=numpy.array(timestamps))
+
+            # TODO: which image features do we want to use?
+            sum_of_intensities = course_features[1]
+            sum_of_intensities_ndarray = numpy.ndarray(shape=(len(sum_of_intensities)),
+                                                       dtype=int,
+                                                       buffer=numpy.array(sum_of_intensities))
 
             # Compute features on the entire timeseries for that well.
-            # TODO: which image features do we want to use?
-            #time_series_features = time_series_features()
-
-
+            sum_of_intensities_ts_features = time_series_features(sum_of_intensities_ndarray,
+                                                                  timestamps_ndarray,
+                                                                  timestamp)
+            # = (mean,sd,d1,d2)
 
             # TODO: query the core model (pass in whatever it needs, also window size)
+            # BB: again, confused about the windowing?!
+            pval = 0.1  # interestingness(all_features, features_for_new_image, all_y):
+            print('pval for timestamp {} = {}' % (timestamp, pval))
 
-            # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
-            # based on epsilon
-
-            # TODO: return that value
-            return {'interestingness': 1}
+            if pval < EPSILON:
+                return {'interestingness': 0}
+            else:
+                return {'interestingness': 1}
 
         else:
             # Not at the end of the window.
