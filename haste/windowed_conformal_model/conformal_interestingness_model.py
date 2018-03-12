@@ -1,5 +1,9 @@
 import pymongo
+import numpy
 from .time_series_features import time_series_features
+from .conformal_model_offline_data import ALL_FEATURES, ALL_Y
+from .conformal_model import interestingness as conformal_interestingness
+import random
 
 # This is the entry point for the containers
 
@@ -13,6 +17,7 @@ from .time_series_features import time_series_features
 
 
 # TODO: these can go in the ctor? - pull the "demo-ness" into the top level repo where we can see it
+
 EPSILON = 0.2
 WINDOW_SIZE = 8
 
@@ -36,7 +41,8 @@ class ConformalInterestingnessModel:
         # TODO: create mongo client? (or pass is collection passed in?)
         pass
 
-    def all_course_features_for_substream(self, mongo_collection, substream_id):
+    @staticmethod
+    def all_course_features_for_substream(mongo_collection, substream_id):
         # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
         cursor = mongo_collection.find(filter={'substream_id': substream_id,
                                                'metadata.imaging_point_number': 1,
@@ -44,6 +50,7 @@ class ConformalInterestingnessModel:
                                        sort=[('timestamp', pymongo.ASCENDING)],
                                        projection=['timestamp', 'metadata.extracted_features'])
 
+        # TODO: consider using list comprehensions here?
         correlations = []
         sums_of_intensities = []
         x_times = []
@@ -91,27 +98,51 @@ class ConformalInterestingnessModel:
             print('interestingness=0 for image from second field: {}' % metadata['original_filename'], flush=True)
             return {'interestingness': 0}
 
-        # TODO: check to see if we at end of window
-
-        if timestamp % WINDOW_SIZE == 0:
+        if timestamp == 0:
+            # AZN data starts at timestamp=1
+            print('timestamp 0 is not supported by time_series_features', flush=True)
+            return {'interestingness': 1}
+        elif timestamp % WINDOW_SIZE == 0:
             # At the end of the window.
 
-            # TODO: if so, query mongoDB for all historic features for this substream
-            #course_features = self.all_course_features_for_substream(..)
+            course_features = self.all_course_features_for_substream(mongo_collection=mongo_collection,
+                                                                     substream_id=substream_id)
+            # ([correlation], [sum_of_intensities], [x_time])
+
+            # BB: ** I'm confused here - how do we do the windowing here? **
+
+            timestamps = course_features[2]
+            timestamps_ndarray = numpy.ndarray(shape=(len(timestamps)),
+                                               dtype=int,
+                                               buffer=numpy.array(timestamps))
+
+            # TODO: which image features do we want to use?
+            sum_of_intensities = course_features[1]
+            sum_of_intensities_ndarray = numpy.ndarray(shape=(len(sum_of_intensities)),
+                                                       dtype=int,
+                                                       buffer=numpy.array(sum_of_intensities))
 
             # Compute features on the entire timeseries for that well.
-            # TODO: which image features do we want to use?
-            #time_series_features = time_series_features()
+            sum_of_intensities_ts_features = time_series_features(sum_of_intensities_ndarray,
+                                                                  timestamps_ndarray,
+                                                                  timestamp)
+            # = (mean,sd,d1,d2)
 
+            # p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
 
+            # Mock for testing (delete me!):
+            p_values = [random.random(), random.random()]
 
-            # TODO: query the core model (pass in whatever it needs, also window size)
+            print('p_values for timestamp {} = {}'.format(timestamp, p_values))
 
-            # TODO: interpret the conformal prediction - make a binary decision 1 or 0 on interestingness.
-            # based on epsilon
+            p_interesting = p_values[0]
+            p_not_interesting = p_values[1]
 
-            # TODO: return that value
-            return {'interestingness': 1}
+            if p_not_interesting < EPSILON:
+                return {'interestingness': 0}
+            else:
+                # If we're not sure, always save.
+                return {'interestingness': 1}
 
         else:
             # Not at the end of the window.
@@ -129,47 +160,43 @@ class ConformalInterestingnessModel:
                 return {'interestingness': 1}
             else:
                 interestingness = lastest_image_for_substream[0]['interestingness']
-                print('returning interestingness={}: not at end of window, falling back to latest result'
-                      % interestingness, flush=True)
+                print('returning interestingness= {} : not at end of window, falling back to latest result'
+                      .format(interestingness), flush=True)
 
                 latest_image_timestamp = lastest_image_for_substream[0]['timestamp']
                 if latest_image_timestamp + 1 != timestamp:
-                    print('missing image - current timestamp: {} previous image has timestamp {} !'
-                          % (timestamp, latest_image_timestamp), flush=True)
+                    print('unexpected most recent image - current timestamp: {} previous image has timestamp {} !'.format(timestamp, latest_image_timestamp), flush=True)
 
                 return {'interestingness': interestingness}
 
 
 if __name__ == '__main__':
     STREAM_ID = 'strm_2018_03_05__14_35_26_from_al'
-    mongo_client = pymongo.MongoClient('mongodb://metadata-db-prod')
+    # mongo_client = pymongo.MongoClient('mongodb://metadata-db-prod')
+    mongo_client = pymongo.MongoClient('mongodb://localhost')
     mongo_db = mongo_client.streams
     cim = ConformalInterestingnessModel()
 
+    MOCK_METADATA = {"full_path": "/foo/bar/wibble/AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01",
+                     "imaging_point_number": 1,
+                     "time_point_number": 88, "unix_timestamp": 1520267258.6972,
+                     "assay_plate_name": "AssayPlate_NUNC_#165305-1",
+                     "original_filename": "AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01.tif",
+                     "color_channel": GREEN_COLOR_CHANNEL, "image_length_bytes": 2554170, "well": "G11",
+                     "z_index_3d": 1,
+                     "time_line_number": 1, "action_list_number": 2,
+                     "extracted_features": {"sum_of_intensities": 10000531, "correlation": 0.065282808685255,
+                                            "laplaceVariance": 1.8528573200424e-7}}
+
     # Modify this to test the above
     # TODO: refactor into some proper test-cases
-    result = cim.interestingness(stream_id=STREAM_ID,
-                                 timestamp=88,
-                                 location=None,
-                                 substream_id='G11',
-                                 metadata={
-                                     "full_path": "/foo/bar/wibble/AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01",
-                                     "imaging_point_number": 1,
-                                     "time_point_number": 88,
-                                     "unix_timestamp": 1520267258.6972,
-                                     "assay_plate_name": "AssayPlate_NUNC_#165305-1",
-                                     "original_filename": "AssayPlate_NUNC_#165305-1_G11_T0088F002L01A02Z01C01.tif",
-                                     "color_channel": 2,
-                                     "image_length_bytes": 2554170,
-                                     "well": "G11",
-                                     "z_index_3d": 1,
-                                     "time_line_number": 1,
-                                     "action_list_number": 2,
-                                     "extracted_features": {
-                                         "sum_of_intensities": 10000531,
-                                         "correlation": 0.065282808685255,
-                                         "laplaceVariance": 1.8528573200424e-7
-                                     }},
-                                 mongo_collection=mongo_db[STREAM_ID])
 
-    print(result)
+    for timestamp in range(1, 16):
+        print(timestamp)
+        result = cim.interestingness(stream_id=STREAM_ID,
+                                     timestamp=timestamp,
+                                     location=None,
+                                     substream_id='G11',
+                                     metadata=MOCK_METADATA,
+                                     mongo_collection=mongo_db[STREAM_ID])
+        print(result)
