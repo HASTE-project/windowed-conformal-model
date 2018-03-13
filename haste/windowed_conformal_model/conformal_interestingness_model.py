@@ -135,8 +135,8 @@ class ConformalInterestingnessModel:
 
             print('p_values for timestamp {} = {}'.format(timestamp, p_values), flush=True)
 
-            p_interesting = p_values[0]
-            p_uninteresting = p_values[1]
+            p_interesting = p_values[1]
+            p_uninteresting = p_values[0]
             return __convert_p_values(p_interesting, p_uninteresting)
         else:
             # Not at the end of the window.
