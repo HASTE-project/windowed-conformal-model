@@ -37,12 +37,11 @@ GREEN_COLOR_CHANNEL = 2
 
 class ConformalInterestingnessModel:
 
-    def __init(self):
-        # TODO: create mongo client? (or pass is collection passed in?)
-        pass
-
     @staticmethod
     def all_course_features_for_substream(mongo_collection, substream_id):
+
+        # TODO: exclude image features from the future (nice to know for now - is stuff being processed in the right order?)
+
         # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
         cursor = mongo_collection.find(filter={'substream_id': substream_id,
                                                'metadata.imaging_point_number': 1,
@@ -111,6 +110,8 @@ class ConformalInterestingnessModel:
 
             # BB: ** I'm confused here - how do we do the windowing here? **
 
+            # TODO: ndarray conversion inside 'time_series_features' function.
+
             timestamps = course_features[2]
             timestamps_ndarray = numpy.ndarray(shape=(len(timestamps)),
                                                dtype=int,
@@ -129,6 +130,7 @@ class ConformalInterestingnessModel:
             # = (mean,sd,d1,d2)
 
             # p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
+            # TODO: concatenate with same ts-series features for correlations
 
             # Mock for testing (delete me!):
             p_values = [random.random(), random.random()]
