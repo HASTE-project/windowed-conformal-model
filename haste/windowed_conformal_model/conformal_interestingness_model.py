@@ -21,10 +21,6 @@ import random
 EPSILON = 0.2
 WINDOW_SIZE = 8
 
-# This model 'wraps' the other one, handles buisness logic for windowing, fetching of features from MongoDB, etc.
-
-# It also adapts the conformal result from Phils model into a binary interestingness decision to match the rest of the
-# API.
 
 # It is this API which we use from the rest of the system- it allows us to keep the 'core maths' clean from anything
 # messy with MongoDB for example. We put all that "mess" in here.
@@ -35,35 +31,49 @@ WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E
 GREEN_COLOR_CHANNEL = 2
 
 
+def __all_course_features_for_substream(mongo_collection, substream_id):
+    # TODO: exclude image features from the future (nice to know for now - is stuff being processed in the right order?)
+    # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
+    cursor = mongo_collection.find(filter={'substream_id': substream_id,
+                                           'metadata.imaging_point_number': 1,
+                                           'metadata.color_channel': GREEN_COLOR_CHANNEL},
+                                   sort=[('timestamp', pymongo.ASCENDING)],
+                                   projection=['timestamp', 'metadata.extracted_features'])
+
+    correlations = []
+    sums_of_intensities = []
+    x_times = []
+
+    for document in cursor:
+        correlations.append(document['metadata']['extracted_features']['correlation'])
+        sums_of_intensities.append(document['metadata']['extracted_features']['sum_of_intensities'])
+        x_times.append(document['timestamp'])
+
+    return correlations, sums_of_intensities, x_times
+
+
+def __convert_p_values(p_interesting, p_uninteresting):
+    # Interpret the conformal p-values, converting to the HASTE notion of interestingness.
+    is_interesting = p_interesting > EPSILON
+    is_uninteresting = p_uninteresting > EPSILON
+    if is_interesting and not is_uninteresting:
+        return {'interestingness': 1}
+    elif not is_interesting and is_uninteresting:
+        return {'interestingness': 0}
+    elif is_interesting and is_uninteresting:
+        # classified as both
+        return {'interestingness': 0.5}
+    else:
+        # classified as neither
+        return {'interestingness': 0.9}
+
+
 class ConformalInterestingnessModel:
-
-    @staticmethod
-    def all_course_features_for_substream(mongo_collection, substream_id):
-
-        # TODO: exclude image features from the future (nice to know for now - is stuff being processed in the right order?)
-
-        # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
-        cursor = mongo_collection.find(filter={'substream_id': substream_id,
-                                               'metadata.imaging_point_number': 1,
-                                               'metadata.color_channel': GREEN_COLOR_CHANNEL},
-                                       sort=[('timestamp', pymongo.ASCENDING)],
-                                       projection=['timestamp', 'metadata.extracted_features'])
-
-        # TODO: consider using list comprehensions here?
-        correlations = []
-        sums_of_intensities = []
-        x_times = []
-
-        for document in cursor:
-            correlations.append(
-                document['metadata']['extracted_features']['correlation'])
-
-            sums_of_intensities.append(
-                document['metadata']['extracted_features']['sum_of_intensities'])
-
-            x_times.append(document['timestamp'])
-
-        return correlations, sums_of_intensities, x_times
+    """
+    This model 'wraps' the other one, handles business logic for windowing, fetching of features from MongoDB, etc.
+    It also adapts the conformal result from Phil's model into a binary interestingness decision to match the rest of the
+    API.
+    """
 
     def interestingness(self,
                         stream_id=None,
@@ -104,13 +114,13 @@ class ConformalInterestingnessModel:
         elif timestamp % WINDOW_SIZE == 0:
             # At the end of the window.
 
-            course_features = self.all_course_features_for_substream(mongo_collection=mongo_collection,
-                                                                     substream_id=substream_id)
+            course_features = __all_course_features_for_substream(mongo_collection=mongo_collection,
+                                                                  substream_id=substream_id)
             # ([correlation], [sum_of_intensities], [x_time])
 
             # BB: ** I'm confused here - how do we do the windowing here? **
 
-            # TODO: ndarray conversion inside 'time_series_features' function.
+            # TODO: move ndarray conversion inside 'time_series_features' function.
 
             timestamps = course_features[2]
             timestamps_ndarray = numpy.ndarray(shape=(len(timestamps)),
@@ -127,25 +137,19 @@ class ConformalInterestingnessModel:
             sum_of_intensities_ts_features = time_series_features(sum_of_intensities_ndarray,
                                                                   timestamps_ndarray,
                                                                   timestamp)
-            # = (mean,sd,d1,d2)
+            # .. = (mean,sd,d1,d2)
 
-            # p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
             # TODO: concatenate with same ts-series features for correlations
 
+            # p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
             # Mock for testing (delete me!):
             p_values = [random.random(), random.random()]
 
             print('p_values for timestamp {} = {}'.format(timestamp, p_values))
 
             p_interesting = p_values[0]
-            p_not_interesting = p_values[1]
-
-            if p_not_interesting < EPSILON:
-                return {'interestingness': 0}
-            else:
-                # If we're not sure, always save.
-                return {'interestingness': 1}
-
+            p_uninteresting = p_values[1]
+            return __convert_p_values(p_interesting, p_uninteresting)
         else:
             # Not at the end of the window.
             # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
@@ -167,9 +171,14 @@ class ConformalInterestingnessModel:
 
                 latest_image_timestamp = lastest_image_for_substream[0]['timestamp']
                 if latest_image_timestamp + 1 != timestamp:
-                    print('unexpected most recent image - current timestamp: {} previous image has timestamp {} !'.format(timestamp, latest_image_timestamp), flush=True)
+                    print(
+                        'unexpected most recent image - current timestamp: {} previous image has timestamp {} !'.format(
+                            timestamp, latest_image_timestamp), flush=True)
 
                 return {'interestingness': interestingness}
+
+
+
 
 
 if __name__ == '__main__':
