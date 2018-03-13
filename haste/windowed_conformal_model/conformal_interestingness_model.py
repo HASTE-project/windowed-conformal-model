@@ -5,22 +5,8 @@ from .conformal_model_offline_data import ALL_FEATURES, ALL_Y
 from .conformal_model import interestingness as conformal_interestingness
 import random
 
-# This is the entry point for the containers
-
-# This one is a wrapper for Phils 'core' model, and handles mongodb, windowing, related biz logic for interestingness.
-
-# Derive from:
-# https://github.com/HASTE-project/HasteStorageClient/blob/master/haste_storage_client/interestingness_model.py
-
-
-# TODO: no state here! except a mongo client!
-
-
-# TODO: these can go in the ctor? - pull the "demo-ness" into the top level repo where we can see it
-
 EPSILON = 0.2
 WINDOW_SIZE = 8
-
 
 # It is this API which we use from the rest of the system- it allows us to keep the 'core maths' clean from anything
 # messy with MongoDB for example. We put all that "mess" in here.
@@ -70,9 +56,11 @@ def __convert_p_values(p_interesting, p_uninteresting):
 
 class ConformalInterestingnessModel:
     """
-    This model 'wraps' the other one, handles business logic for windowing, fetching of features from MongoDB, etc.
-    It also adapts the conformal result from Phil's model into a binary interestingness decision to match the rest of the
-    API.
+    This model 'wraps' conformal_model, handles business logic for windowing, fetching of features from MongoDB, etc.
+    It also adapts the conformal result from Phil's model into a HASTE-friendly interestingness measure.
+
+    Derives from:
+    https://github.com/HASTE-project/HasteStorageClient/blob/master/haste_storage_client/interestingness_model.py
     """
 
     def interestingness(self,
@@ -176,9 +164,6 @@ class ConformalInterestingnessModel:
                             timestamp, latest_image_timestamp), flush=True)
 
                 return {'interestingness': interestingness}
-
-
-
 
 
 if __name__ == '__main__':
