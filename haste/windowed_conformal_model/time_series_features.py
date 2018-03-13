@@ -39,18 +39,17 @@ def time_series_features(feature_time_series, timestamps, end_time):
     feat[0] = np.mean(Y)  # mean of raw data
     feat[1] = np.std(Y)  # standard deviation of raw data
 
-    endt = end_time  # TODO: unneeded?
-    y_pred = gam.predict(pd.DataFrame(np.arange(endt)))
+    y_pred = gam.predict(pd.DataFrame(np.arange(end_time)))
 
-    D1 = np.zeros(endt)
-    D2 = np.zeros(endt)
+    D1 = np.zeros(end_time)
+    D2 = np.zeros(end_time)
 
-    for i in range(1, endt - 1):
+    for i in range(1, end_time - 1):
         D1[i] = 0.5 * (y_pred[i + 1] - y_pred[i - 1])  # 1st derivative from smooth
         D2[i] = y_pred[i + 1] - 2 * y_pred[i] + y_pred[i - 1]  # 2nd derivative
 
-    feat[2] = np.mean(D1[1:(endt - 1)])
-    feat[3] = np.mean(D2[1:(endt - 1)])
+    feat[2] = np.mean(D1[1:(end_time - 1)])
+    feat[3] = np.mean(D2[1:(end_time - 1)])
 
     return feat
 
