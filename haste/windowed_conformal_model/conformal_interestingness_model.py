@@ -82,17 +82,17 @@ class ConformalInterestingnessModel:
 
         # For the demo - skip wells which we trained on.
         if substream_id not in WELLS_FOR_ONLINE_ANALYSIS:
-            print('interestingness=0 for training well {}' % metadata['well'], flush=True)
+            print('interestingness=0 for training well {}'.format(metadata['well']), flush=True)
             return {'interestingness': 0}
 
         if metadata['color_channel'] != GREEN_COLOR_CHANNEL:
             # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
-            print('interestingness=0 for non-green image: {}' % metadata['original_filename'], flush=True)
+            print('interestingness=0 for non-green image: {}'.format(metadata['original_filename']), flush=True)
             return {'interestingness': 0}
 
         if metadata['imaging_point_number'] != 1:
             # TODO: could perhaps use instead same interestingness as most recent green (+field 1) image for substream
-            print('interestingness=0 for image from second field: {}' % metadata['original_filename'], flush=True)
+            print('interestingness=0 for image from second field: {}'.format(metadata['original_filename']), flush=True)
             return {'interestingness': 0}
 
         if timestamp == 0:
@@ -106,7 +106,7 @@ class ConformalInterestingnessModel:
                                                                   substream_id=substream_id)
             # ([correlation], [sum_of_intensities], [x_time])
 
-            # BB: ** I'm confused here - how do we do the windowing here? **
+            # TODO: move ndarray conversion inside 'time_series_features' function.
 
             # TODO: move ndarray conversion inside 'time_series_features' function.
 
@@ -121,7 +121,7 @@ class ConformalInterestingnessModel:
                                                        dtype=int,
                                                        buffer=numpy.array(sum_of_intensities))
 
-            # Compute features on the entire timeseries for that well.
+            # Compute features on the entire timeseries so far for that well:
             sum_of_intensities_ts_features = time_series_features(sum_of_intensities_ndarray,
                                                                   timestamps_ndarray,
                                                                   timestamp)
@@ -133,7 +133,7 @@ class ConformalInterestingnessModel:
             # Mock for testing (delete me!):
             p_values = [random.random(), random.random()]
 
-            print('p_values for timestamp {} = {}'.format(timestamp, p_values))
+            print('p_values for timestamp {} = {}'.format(timestamp, p_values), flush=True)
 
             p_interesting = p_values[0]
             p_uninteresting = p_values[1]
@@ -159,10 +159,8 @@ class ConformalInterestingnessModel:
 
                 latest_image_timestamp = lastest_image_for_substream[0]['timestamp']
                 if latest_image_timestamp + 1 != timestamp:
-                    print(
-                        'unexpected most recent image - current timestamp: {} previous image has timestamp {} !'.format(
-                            timestamp, latest_image_timestamp), flush=True)
-
+                    print('unexpected most recent image - current timestamp: {} previous image has timestamp {} !'
+                          .format(timestamp, latest_image_timestamp), flush=True)
                 return {'interestingness': interestingness}
 
 
