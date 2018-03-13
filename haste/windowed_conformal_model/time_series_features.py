@@ -26,9 +26,6 @@ def time_series_features(feature_time_series, timestamps, end_time):
     :return: 4 time-series features (mean; standard deviation; mean(trend); mean(trend change))
     """
 
-    if len(feature_time_series) != len(timestamps):
-        raise Exception('feature_time_series and timestamps must have equal length')
-
     feat = np.zeros(4)
 
     X = pd.DataFrame(timestamps)
