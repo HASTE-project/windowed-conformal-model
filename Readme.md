@@ -26,6 +26,6 @@ pip3 install -e .
 
 ## Contributors
 
-Ben Blamey
-Håkan Wieslander
+Ben Blamey,
+Håkan Wieslander,
 Phil Harrison
