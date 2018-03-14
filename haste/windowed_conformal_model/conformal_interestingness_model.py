@@ -125,11 +125,24 @@ class ConformalInterestingnessModel:
             sum_of_intensities_ts_features = time_series_features(sum_of_intensities_ndarray,
                                                                   timestamps_ndarray,
                                                                   timestamp)
+
             # .. = (mean,sd,d1,d2)
 
-            # TODO: concatenate with same ts-series features for correlations
+            #Correlation
+            correlation = course_features[0]
+            correlation_ndarray = numpy.ndarray(shape=(len(correlation)),
+                                                       dtype=int,
+                                                       buffer=numpy.array(correlation))
 
-            # p_values = conformal_interestingness(ALL_FEATURES, sum_of_intensities_ts_features, ALL_Y)
+            # Compute features on the entire timeseries so far for that well:
+            correlation_ts_features = time_series_features(correlation_ndarray,
+                                                                  timestamps_ndarray,
+                                                                  timestamp)
+
+            ts_features = numpy.append(sum_of_intensities_ts_features, correlation_ts_features, axis=0)
+
+
+            # p_values = conformal_interestingness(ALL_FEATURES, ts_features, ALL_Y)
             # Mock for testing (delete me!):
             p_values = [random.random(), random.random()]
 
