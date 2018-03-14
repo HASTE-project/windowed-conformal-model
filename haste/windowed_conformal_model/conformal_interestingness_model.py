@@ -108,14 +108,23 @@ class ConformalInterestingnessModel:
 
             # TODO: move ndarray conversion inside 'time_series_features' function.
 
-            # TODO: move ndarray conversion inside 'time_series_features' function.
-
             timestamps = course_features[2]
             timestamps_ndarray = numpy.ndarray(shape=(len(timestamps)),
                                                dtype=int,
                                                buffer=numpy.array(timestamps))
 
-            # TODO: which image features do we want to use?
+            #Correlation
+            correlation = course_features[0]
+            correlation_ndarray = numpy.ndarray(shape=(len(correlation)),
+                                                dtype=float,
+                                                buffer=numpy.array(correlation))
+
+            # Compute features on the entire timeseries so far for that well:
+            correlation_ts_features = time_series_features(correlation_ndarray,
+                                                                  timestamps_ndarray,
+                                                                  timestamp)
+
+            # Sum of intensities
             sum_of_intensities = course_features[1]
             sum_of_intensities_ndarray = numpy.ndarray(shape=(len(sum_of_intensities)),
                                                        dtype=int,
@@ -128,18 +137,7 @@ class ConformalInterestingnessModel:
 
             # .. = (mean,sd,d1,d2)
 
-            #Correlation
-            correlation = course_features[0]
-            correlation_ndarray = numpy.ndarray(shape=(len(correlation)),
-                                                       dtype=int,
-                                                       buffer=numpy.array(correlation))
-
-            # Compute features on the entire timeseries so far for that well:
-            correlation_ts_features = time_series_features(correlation_ndarray,
-                                                                  timestamps_ndarray,
-                                                                  timestamp)
-
-            ts_features = numpy.append(sum_of_intensities_ts_features, correlation_ts_features, axis=0)
+            ts_features = numpy.append(correlation_ts_features, sum_of_intensities_ts_features, axis=0)
 
 
             # p_values = conformal_interestingness(ALL_FEATURES, ts_features, ALL_Y)
