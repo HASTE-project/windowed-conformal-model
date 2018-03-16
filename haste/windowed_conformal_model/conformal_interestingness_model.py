@@ -3,7 +3,6 @@ import numpy
 from .time_series_features import time_series_features
 from .conformal_model_offline_data import TRAIN_FEATURES_STANDARDIZED, TRAIN_Y, STANDARDIZING_VALUES
 from .conformal_model import interestingness as conformal_interestingness
-import random
 
 EPSILON = 0.2
 WINDOW_SIZE = 8
@@ -16,10 +15,12 @@ WINDOW_SIZE = 8
 WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
 GREEN_COLOR_CHANNEL = 2
 
-def __standardize(features, standardizing_values):
+
+def _standardize(features, standardizing_values):
     return (features - standardizing_values[0]) / standardizing_values[1]
 
-def __all_course_features_for_substream(mongo_collection, substream_id):
+
+def _all_course_features_for_substream(mongo_collection, substream_id):
     # TODO: exclude image features from the future (nice to know for now - is stuff being processed in the right order?)
     # Search for documents with specific substream_id having image_point_number = 1 and color_channel = 2 (Green)
     cursor = mongo_collection.find(filter={'substream_id': substream_id,
@@ -40,7 +41,7 @@ def __all_course_features_for_substream(mongo_collection, substream_id):
     return correlations, sums_of_intensities, x_times
 
 
-def __convert_p_values(p_interesting, p_uninteresting):
+def _convert_p_values(p_interesting, p_uninteresting):
     # Interpret the conformal p-values, converting to the HASTE notion of interestingness.
     is_interesting = p_interesting > EPSILON
     is_uninteresting = p_uninteresting > EPSILON
@@ -74,13 +75,16 @@ class ConformalInterestingnessModel:
                         mongo_collection=None):
         """
         :param stream_id (str): ID for the stream session - used to group all the data for that streaming session.
-        :param timestamp (numeric): should come from the cloud edge (eg. microscope). integer or floating point.
+        :param timestamp (must be integer for this model): should come from the cloud edge (eg. microscope). integer or floating point.
             *Uniquely identifies the document within the streaming session*.
         :param location (tuple): spatial information (eg. (x,y)).
         :param substream_id (string): ID for grouping of documents in stream (eg. microscopy well ID), or 'None'.
         :param metadata (dict): extracted metadata (eg. image features).
         :param mongo_collection: collection in mongoDB allowing custom queries (this is a hack - best avoided!)
         """
+
+        if timestamp != int(timestamp):
+            raise ValueError('this model only supports integer timestamps')
 
         # For the demo - skip wells which we trained on.
         if substream_id not in WELLS_FOR_ONLINE_ANALYSIS:
@@ -104,8 +108,8 @@ class ConformalInterestingnessModel:
         elif timestamp % WINDOW_SIZE == 0:
             # At the end of the window.
 
-            course_features = __all_course_features_for_substream(mongo_collection=mongo_collection,
-                                                                  substream_id=substream_id)
+            course_features = _all_course_features_for_substream(mongo_collection=mongo_collection,
+                                                                 substream_id=substream_id)
             # ([correlation], [sum_of_intensities], [x_time])
 
             # TODO: move ndarray conversion inside 'time_series_features' function.
@@ -115,7 +119,7 @@ class ConformalInterestingnessModel:
                                                dtype=int,
                                                buffer=numpy.array(timestamps))
 
-            #Correlation
+            # Correlation
             correlation = course_features[0]
             correlation_ndarray = numpy.ndarray(shape=(len(correlation)),
                                                 dtype=float,
@@ -123,8 +127,8 @@ class ConformalInterestingnessModel:
 
             # Compute features on the entire timeseries so far for that well:
             correlation_ts_features = time_series_features(correlation_ndarray,
-                                                                  timestamps_ndarray,
-                                                                  timestamp)
+                                                           timestamps_ndarray,
+                                                           timestamp)
 
             # Sum of intensities
             sum_of_intensities = course_features[1]
@@ -150,7 +154,7 @@ class ConformalInterestingnessModel:
 
             p_interesting = p_values[1]
             p_uninteresting = p_values[0]
-            return __convert_p_values(p_interesting, p_uninteresting)
+            return _convert_p_values(p_interesting, p_uninteresting)
         else:
             # Not at the end of the window.
             # TODO: if not, return the interestingness of the last image in this substream (query mongoDB)
@@ -179,8 +183,8 @@ class ConformalInterestingnessModel:
 
 if __name__ == '__main__':
     STREAM_ID = 'strm_2018_03_05__14_35_26_from_al'
-    # mongo_client = pymongo.MongoClient('mongodb://metadata-db-prod')
-    mongo_client = pymongo.MongoClient('mongodb://localhost')
+    mongo_client = pymongo.MongoClient('mongodb://metadata-db-prod')
+    # mongo_client = pymongo.MongoClient('mongodb://localhost')
     mongo_db = mongo_client.streams
     cim = ConformalInterestingnessModel()
 
