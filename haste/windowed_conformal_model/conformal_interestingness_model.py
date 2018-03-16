@@ -141,10 +141,10 @@ class ConformalInterestingnessModel:
 
             ts_features = numpy.append(correlation_ts_features, sum_of_intensities_ts_features, axis=0)
 
-            ts_features_standardized = __standardize(ts_features, STANDARDIZING_VALUES[:, :, timestamp - 1])
-            # p_values = conformal_interestingness(TRAIN_FEATURES_STANDARDIZED[:, :, timestamp - 1], ts_features_standardized, TRAIN_Y)
+            ts_features_standardized = __standardize(ts_features, STANDARDIZING_VALUES[:, :, (timestamp / WINDOW_SIZE) - 1])
+            p_values = conformal_interestingness(TRAIN_FEATURES_STANDARDIZED[:, :, (timestamp / WINDOW_SIZE) - 1], ts_features_standardized, TRAIN_Y)
             # Mock for testing (delete me!):
-            p_values = [random.random(), random.random()]
+            # p_values = [random.random(), random.random()]
 
             print('p_values for timestamp {} = {}'.format(timestamp, p_values), flush=True)
 
