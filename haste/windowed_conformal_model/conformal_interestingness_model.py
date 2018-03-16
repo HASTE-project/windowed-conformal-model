@@ -1,7 +1,7 @@
 import pymongo
 import numpy
 from .time_series_features import time_series_features
-from .conformal_model_offline_data import TRAIN_FEATURES_STANDARDIZED, TRAIN_Y, STANDARDIZING_VALUES
+from haste.windowed_conformal_model.offline_data.conformal_model_offline_data import TRAIN_FEATURES_STANDARDIZED, TRAIN_Y, STANDARDIZING_VALUES
 from .conformal_model import interestingness as conformal_interestingness
 
 EPSILON = 0.2
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     # Modify this to test the above
     # TODO: refactor into some proper test-cases
 
-    for timestamp in range(1, 16):
+    for timestamp in range(1, 17):
         print(timestamp)
         result = cim.interestingness(stream_id=STREAM_ID,
                                      timestamp=timestamp,
