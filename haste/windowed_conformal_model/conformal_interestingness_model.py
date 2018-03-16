@@ -1,7 +1,7 @@
 import pymongo
 import numpy
 from .time_series_features import time_series_features
-from .conformal_model_offline_data import ALL_FEATURES, ALL_Y
+from .conformal_model_offline_data import TRAIN_FEATURES_STANDARDIZED, TRAIN_Y, STANDARDIZING_VALUES
 from .conformal_model import interestingness as conformal_interestingness
 import random
 
@@ -16,6 +16,8 @@ WINDOW_SIZE = 8
 WELLS_FOR_ONLINE_ANALYSIS = ['B05', 'C02', 'C03', 'C04', 'C09', 'D04', 'D06', 'E10', 'F09', 'G02', 'G10', 'G11']
 GREEN_COLOR_CHANNEL = 2
 
+def __standardize(features, standardizing_values):
+    return (features - standardizing_values[0]) / standardizing_values[1]
 
 def __all_course_features_for_substream(mongo_collection, substream_id):
     # TODO: exclude image features from the future (nice to know for now - is stuff being processed in the right order?)
@@ -139,10 +141,10 @@ class ConformalInterestingnessModel:
 
             ts_features = numpy.append(correlation_ts_features, sum_of_intensities_ts_features, axis=0)
 
-
-            # p_values = conformal_interestingness(ALL_FEATURES, ts_features, ALL_Y)
+            ts_features_standardized = __standardize(ts_features, STANDARDIZING_VALUES[:, :, (timestamp / WINDOW_SIZE) - 1])
+            p_values = conformal_interestingness(TRAIN_FEATURES_STANDARDIZED[:, :, (timestamp / WINDOW_SIZE) - 1], ts_features_standardized, TRAIN_Y)
             # Mock for testing (delete me!):
-            p_values = [random.random(), random.random()]
+            # p_values = [random.random(), random.random()]
 
             print('p_values for timestamp {} = {}'.format(timestamp, p_values), flush=True)
 

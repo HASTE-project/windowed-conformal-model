@@ -11,8 +11,6 @@
 # such as those possible with the python package tsfresh (as used by Fredrik in his work)
 
 import numpy as np
-import pandas as pd
-from pygam import LinearGAM
 
 
 # TODO: reorder params, timestamps first
@@ -28,15 +26,12 @@ def time_series_features(feature_time_series, timestamps, end_time):
 
     feat = np.zeros(4)
 
-    X = pd.DataFrame(timestamps)
-    Y = pd.Series(feature_time_series)
+    feat[0] = np.mean(feature_time_series)  # mean of raw data
+    feat[1] = np.std(feature_time_series)  # standard deviation of raw data
 
-    gam = LinearGAM(n_splines=min(25, len(Y))).gridsearch(X, Y)
-
-    feat[0] = np.mean(Y)  # mean of raw data
-    feat[1] = np.std(Y)  # standard deviation of raw data
-
-    y_pred = gam.predict(pd.DataFrame(np.arange(end_time)))
+    z = np.polyfit(timestamps, feature_time_series, min(8, round(len(timestamps)/3)))
+    zfit = np.poly1d(z)
+    y_pred = zfit(np.arange(end_time))
 
     D1 = np.zeros(end_time)
     D2 = np.zeros(end_time)
@@ -50,41 +45,3 @@ def time_series_features(feature_time_series, timestamps, end_time):
 
     return feat
 
-
-if __name__ == '__main__':
-    # strangely when running this "poor man's unit test" from the terminal I get an ImportWarning
-    # but not when I run it in a jupyter notebook!?
-    # in both cases things appear to work though...
-    features = np.sort(np.random.random(8))
-    timestamps = np.arange(8)
-    end_time = 8
-    ts_features = time_series_features(feature_time_series=features, timestamps=timestamps, end_time=end_time)
-    # if just using GFP will run the above function twice appending the results as we go
-    # so run for GFP sum and get 4 features
-    # then run with GFP correlation and append four more features to the 1d ndarray
-    # if we use the LNP data then similarly just append four new features 
-    # for each granulometry disc size we decide to use
-    # in my R demo I used disk sizes 2:4
-    # so for the "full" model I had 32 features to fit the models to
-    print(ts_features)
-
-# Phil's TODO list (with help as needed from Ben & Håkan)
-# ------------------------------------------------------
-
-# necessary for streaming demo to work
-# ------------------------------------
-# create 1d ndarray with response variables for "training" data (sum(GFP correlation) through time >= 20)
-# exclude B10 from all analyses (i.e. not part of "training" or "test" data) [had a fibre across image field]
-# use tsfeatures above on "training" data to make a 3d ndarray (train_data)
-# dimensions = number of training wells X number of features X number of time windows
-# number of features = 8 if just using GFP sum and GFP correlation
-# number of time windows = 11 [= 8/88]: first = 0:7, second = 0:15, etc
-# standardise train_data and store the mean and sd of the standardisations for use on the "test" data
-# standardisation happens after using "tsfeatures" function but before running "interestingness" TCP function
-
-# for my own explorations and additional bits and pieces for AZ demo
-# ------------------------------------------------------------------
-# test on my mac (non-streaming)
-# are results comparable to those gotten with R?
-# plot results also with python (as from end of R demo)
-# tables of results from python run (again as from end of my R demo)
