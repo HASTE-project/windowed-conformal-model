@@ -1,7 +1,15 @@
 import numpy as np
+import pkg_resources
 
-TRAIN_FEATURES_STANDARDIZED = np.load('offline_data/train_features_standardized.npy')
-STANDARDIZING_VALUES = np.load('offline_data/standardizing_values.npy')
 
-TRAIN_Y = np.load('offline_data/train_y.npy')
-TEST_Y = np.load('offline_data/test_y.npy')
+def _load_offline_resource(resource_path):
+    # Load the file correctly if we've been imported (and even if we are an egg!)
+    file_path = pkg_resources.resource_filename(__name__, resource_path)
+    return np.load(file_path)
+
+
+TRAIN_FEATURES_STANDARDIZED = _load_offline_resource('train_features_standardized.npy')
+STANDARDIZING_VALUES = _load_offline_resource('standardizing_values.npy')
+
+TRAIN_Y = _load_offline_resource('train_y.npy')
+TEST_Y = _load_offline_resource('test_y.npy')
