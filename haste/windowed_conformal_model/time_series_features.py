@@ -1,11 +1,6 @@
 # tsfeatures: computes features from time-series data
 # ---------------------------------------------------
 
-# pygam was the closest thing I could find in python to R's mgcv (a great package for GAMs)
-#       pip install pygam
-# pygam says to do the following installation to install scikit-sparse and nose
-# I have nose but installed scikit-sparse on my mac with:
-#       conda install -c conda-forge scikit-sparse
 # the features I compute below are the same as those I used in my R demo
 # later I will explore other potential features to extract
 # such as those possible with the python package tsfresh (as used by Fredrik in his work)
